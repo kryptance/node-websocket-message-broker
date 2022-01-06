@@ -77,6 +77,7 @@ async function main() {
       let socket = sockets.get(sub.socketId);
       socket && socket.send({
         topic: 'update',
+        destination: channelId,
         encrypted: false,
         body: {
           'subscribers': subscriptionsOfOthersPerTopic
