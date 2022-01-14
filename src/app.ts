@@ -2,9 +2,11 @@ import express from 'express';
 import http from 'http';
 import {Server, Socket} from "socket.io";
 import {Queue} from 'queue-typescript';
-import {SocketMessage, Subscription, SubscriptionTopic} from "./types";
 import cors from 'cors';
 import * as Collections from 'typescript-collections';
+import webpush from 'web-push';
+import {SocketMessage, Subscription, SubscriptionTopic} from "./types";
+import {publicVapidKey, privateVapidKey} from './config';
 
 const messageQueue = new Queue<SocketMessage>()
 
@@ -30,6 +32,8 @@ async function main() {
   const app = express();
   const server = http.createServer(app);
   const io = new Server(server);
+  
+  webpush.setVapidDetails("mailto:example2@yourdomain.org", publicVapidKey, privateVapidKey);
 
   let sockets = new Map<string, Socket>()
   app.use(express.json());
@@ -45,6 +49,22 @@ async function main() {
     const data = req.body as SocketMessage
     messageQueue.enqueue(data)
     res.end();
+  });
+
+  app.post('/push-subscribe', (req, res) => {
+    const payload = JSON.stringify({
+      title: 'New notification',
+      description: 'description',
+      icon: 'https://mongoosejs.com/docs/images/mongoose5_62x30_transparent.png'
+    });
+  
+    webpush.sendNotification(req.body, payload)
+      .then(result => console.log(''))
+      .catch(e => {      
+        console.log(e.stack)
+      });
+    
+    res.status(200).json({ 'success': true });
   });
 
   function updateChannel(channelId: string) {
