@@ -1,44 +1,18 @@
 import * as Collections from "typescript-collections";
 import {Socket} from "socket.io";
-import {SocketMessage, SubscriptionTopic} from "./types";
-import webpush from "web-push";
+import {SocketMessage, Subscriber} from "./types";
 import {Queue} from "queue-typescript";
-import {sockets} from "./messaging-websocket";
+import {sockets, sendMessage} from "./messaging-websocket";
+import {sendPushNotification} from "./messaging-webpush"
 
-export type Subscriber = {
-    topic: SubscriptionTopic,
-    socketId?: string,
-    webPush?: any
-}
 // map channel addresses (hash from encryption key) to Subscribers
 export const subscriptions = new Collections.MultiDictionary<string, Subscriber>()
 
-export function deliverMessage(subscription: Subscriber, sockets: Map<string, Socket>, message: SocketMessage) {
+export function deliverMessage(subscription: Subscriber, message: SocketMessage) {
     if (subscription.socketId) {
-        let socket = sockets.get(subscription.socketId);
-        socket && socket.send(message)
+        sendMessage(subscription, message)
     } else if (subscription.webPush) {
-        const payload = JSON.stringify({
-            title: message.body.title,
-            description: message.body.description,
-            icon: message.body.icon
-        });
-
-        webpush.sendNotification(subscription.webPush, payload)
-            .then(() => console.log('Successfully sent.'))
-            .catch(e => {
-                console.log(e.stack)
-
-                // Remove the failed subscriptions
-                const auth = subscription.webPush.keys.auth
-                const subsForDestination = subscriptions.getValue(message.destination as string)
-                subscriptions.remove(message.destination as string)
-                
-                subsForDestination
-                    .filter(sub => (sub.webPush.keys.auth !== auth))
-                    .map(sub => subscriptions.setValue(message.destination as string, sub))
-                console.log(subscriptions.getValue(message.destination as string))
-            });
+        sendPushNotification(subscription, message)
     }
 }
 

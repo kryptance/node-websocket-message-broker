@@ -11,3 +11,9 @@ export type Subscription = {
     encrypted: boolean,
     topic: SubscriptionTopic
 }
+
+export type Subscriber = {
+    topic: SubscriptionTopic,
+    socketId?: string,
+    webPush?: any
+}

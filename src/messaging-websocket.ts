@@ -3,7 +3,7 @@ import {Socket} from "socket.io";
 import {DefaultEventsMap} from "socket.io/dist/typed-events";
 import * as Collections from "typescript-collections";
 import {deliverMessage, subscriptions, updateDestination} from "./messaging";
-import {SocketMessage, Subscription} from "./types";
+import {SocketMessage, Subscriber, Subscription} from "./types";
 
 export const socketSubscriptions = new Collections.MultiDictionary<string, string>()
 export let sockets = new Map<string, Socket>()
@@ -37,12 +37,17 @@ export function relayMessage(data: any, socketId: string) {
         if (subscriptions.containsKey(message.destination)) {
             subscriptions.getValue(message.destination).forEach(subscription => {
                 if (subscription.topic === message.topic) {
+                    deliverMessage(subscription, message);
                     console.log("DELIVERING MESSAGE")
-                    deliverMessage(subscription, sockets, message);
                 }
             })
         }
     }
+}
+
+export function sendMessage(subscription: Subscriber, message: SocketMessage) {
+    let socket = sockets.get(subscription.socketId as string);
+    socket && socket.send(message)
 }
 
 export function handleSubscribeMessage(message: SocketMessage, socketId: string, updateDestination: (destination: string) => void) {
