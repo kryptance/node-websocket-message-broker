@@ -3,8 +3,8 @@ import http from 'http';
 import {Server} from "socket.io";
 import cors from 'cors';
 import webpush from 'web-push';
+import dotenv from 'dotenv';
 import {SocketMessage, Subscription} from "./types";
-import {privateVapidKey, publicVapidKey} from './config';
 import {
   enqueueMessage,
   updateDestination
@@ -12,10 +12,12 @@ import {
 import {connectSocket, disconnectSocket, relayMessage} from "./messaging-websocket";
 import {addWebPushSubscription} from "./messaging-webpush";
 
+dotenv.config();
+
 const corsOptions = {
   origin: '*',
   optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-}
+};
 
 async function main() {
   // Use connect method to connect to the server
@@ -25,7 +27,11 @@ async function main() {
   const server = http.createServer(app);
   const io = new Server(server);
 
-  webpush.setVapidDetails("mailto:example2@yourdomain.org", publicVapidKey, privateVapidKey);
+  webpush.setVapidDetails(
+    "mailto:example2@yourdomain.org",
+    process.env.PUBLIC_VAPID_KEY || '',
+    process.env.PRIVATE_VAPID_KEY || '',
+  );
 
   app.use(express.json());
   app.use(cors(corsOptions));

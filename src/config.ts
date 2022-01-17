@@ -1,2 +1,0 @@
-export const publicVapidKey = "BIf9xwqHnHIFFjTGie3cUL0NTxaBgMCJdS9p5S7cuQOaJkrUppX3VwhBX-VH6gPI-jTwyp7SWtK5hGsvIQNP1Ow";
-export const privateVapidKey = "IDG76leNYQJLpKLSkfJckwengBivWqdsZTQokheM8RE";

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "dotenv": "^14.0.1",
     "express": "^4.17.1",
     "queue-typescript": "^1.0.1",
     "socket.io": "^4.4.0",
