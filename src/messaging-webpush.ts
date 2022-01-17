@@ -26,6 +26,5 @@ export function sendPushNotification(subscription: Subscriber, message: SocketMe
             subsForDestination
                 .filter(sub => (sub.webPush.keys.auth !== auth))
                 .map(sub => subscriptions.setValue(message.destination as string, sub))
-            console.log(subscriptions.getValue(message.destination as string))
         });
 }
