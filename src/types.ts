@@ -4,7 +4,7 @@ export type SocketMessage = {
     body: any
 }
 
-export type SubscriptionTopic = 'email' | 'email-sent' | 'email-queued'
+export type SubscriptionTopic = string
 
 export type Subscription = {
     destination: string,

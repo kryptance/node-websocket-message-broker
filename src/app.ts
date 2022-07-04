@@ -6,7 +6,7 @@ import webpush from 'web-push';
 import dotenv from 'dotenv';
 import {SocketMessage, Subscription} from "./types";
 import {
-  enqueueMessage,
+  enqueueMessage, MessageQueue,
   updateDestination
 } from "./messaging";
 import {connectSocket, disconnectSocket, relayMessage} from "./messaging-websocket";
@@ -15,75 +15,77 @@ import {addWebPushSubscription} from "./messaging-webpush";
 dotenv.config();
 
 const corsOptions = {
-    origin: '*',
-    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+  origin: '*',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }
 
 async function main() {
-    // Use connect method to connect to the server
-    console.log('Connected successfully to server');
+  const app = express();
+  const server = http.createServer(app);
+  const io = new Server(server);
 
-    const app = express();
-    const server = http.createServer(app);
-    const io = new Server(server);
+  const queue = new MessageQueue({
+    host: "127.0.0.1",
+    port: 6379,
+    password: 'eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81',
+    queueName: 'messages'
+  })
 
-    webpush.setVapidDetails(
-    "mailto:example2@yourdomain.org",
+  webpush.setVapidDetails(
+    "mailto:admin@kryptance.de",
     process.env.PUBLIC_VAPID_KEY || '',
     process.env.PRIVATE_VAPID_KEY || '',
-  );
-    app.use(express.json());
-    app.use(cors(corsOptions));
+  )
 
-    app.use(function (req, res, next) {
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Headers", "*");
-        next();
-    });
+  app.use(express.json());
+  app.use(cors(corsOptions));
 
-    app.post('/message', (req, res) => {
-        const data = req.body as SocketMessage
-        enqueueMessage(data)
-        res.end()
-    });
+  app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "*");
+    next();
+  })
 
-    app.post('/push-subscribe', (req, res) => {
+  app.post('/message', (req, res) => {
+    const data = req.body as SocketMessage
+    queue.enqueueMessage(data).then(() => {
+      res.end()
+    })
+  })
 
+  app.post('/push-subscribe', (req, res) => {
+    const webSubscription = req.body.webPushSubscription
+    const subscription: Subscription = req.body.brokerSubscription
+    addWebPushSubscription(subscription, webSubscription)
+    updateDestination(subscription.destination)
 
-                    const webSubscription = req.body.webPushSubscription
-                            const subscription: Subscription = req.body.brokerSubscription
-                            addWebPushSubscription(subscription, webSubscription)
-                        updateDestination(subscription.destination)
+    res.status(200).json({
+      'success': true
+    })
+  })
 
-            res.status(200).json({ 'success': true
-        });
-    });
+  io.on('connection', (socket) => {
+    console.log('a user connected')
 
-    io.on('connection', (socket) => {
+    connectSocket(socket)
+    const socketId = socket.id
 
-        console.log('a user connected');
-
-        connectSocket(socket)const socketId = socket.id
-
-        socket.on('message', (data: any) => {
-          relayMessage(data, socketId);
-        })
-
-        socket.on('disconnect', () => {
-          disconnectSocket(socketId);
-        })
+    socket.on('message', (data: any) => {
+      relayMessage(data, socketId)
     })
 
-    server.listen(30000, () => {
-        console.log('listening on *:30000');
+    socket.on('disconnect', () => {
+      disconnectSocket(socketId)
+    })
+  })
 
+  server.listen(30000, () => {
+    console.log('listening on *:30000')
+  })
 
-    });
-
-
-    return 'done.';
+  return 'done.'
 }
 
 main()
-    .then(console.log)
-    .catch(console.error)
+  .then(console.log)
+  .catch(console.error)

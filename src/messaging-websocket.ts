@@ -20,7 +20,7 @@ export function disconnectSocket(socketId: string) {
     socketSubscriptions.getValue(socketId).forEach(channelId => {
         updateDestination(channelId)
     })
-    console.log('user disconnected');
+    console.log('user disconnected')
     socketSubscriptions.remove(socketId)
 }
 
@@ -37,7 +37,7 @@ export function relayMessage(data: any, socketId: string) {
         if (subscriptions.containsKey(message.destination)) {
             subscriptions.getValue(message.destination).forEach(subscription => {
                 if (subscription.topic === message.topic) {
-                    deliverMessage(subscription, message);
+                    deliverMessage(subscription, message)
                     console.log("DELIVERING MESSAGE")
                 }
             })
